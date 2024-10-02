@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Encryption Interface</title>
+    <style>
+      body {
+        font-family: Times New Roman, sans-serif;
+        font-size: large;
+        margin: 10px;
+        background-color: #dae0e6;
+      }
+      .container {
+        max-width: 800px;
+        margin: auto;
+        padding: 60px;
+        background-color: honeydew;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+      input[type="text"],
+      textarea {
+        font-size: 20px;
+        width: 98%;
+        padding: 8px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+      }
+      input[type="file"] {
+        font-size: 20px;
+        margin-bottom: 10px;
+        padding: 8px;
+      }
+      select {
+        width: 100%;
+        height: 60px;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+      }
+      button {
+        border: none;
+        padding: 10px 20px;
+        background-color: darkseagreen;
+        color: black;
+        cursor: pointer;
+        margin: 5px;
+        border-radius: 5px;
+        font-family: Times New Roman, sans-serif;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      .autodetect {
+        display: inline-block;
+        margin-left: 10px;
+      }
+      .file-status {
+        margin-bottom: 20px;
+        font-weight: bold;
+        color: green;
+      }
+      .result {
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-top: 20px;
+        font-size: 18px;
+      }
+      .button-section {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1><center>Encryption Interface</center></h1>
+
+      <!-- Input type -->
+      <form
+        id="encryption-form"
+        action="/process"
+        method="post"
+        enctype="multipart/form-data"
+      >
+        <label for="input-type">Input type:</label>
+        <select
+          name="input_type"
+          id="input-type"
+          onchange="toggleInputFields()"
+        >
+          <option value="text">Text</option>
+          <option value="file">File</option>
+        </select>
+
+        <!-- Input text -->
+        <div id="text-input" class="input-section">
+          <label for="input-text">Input text:</label>
+          <textarea name="input_text" id="input-text" rows="4"></textarea>
+
+          <!-- Plaintext or Hex selection -->
+          &nbsp;
+        </div>
+
+        <!-- Input file -->
+        <div id="file-input" class="input-section" style="display: none">
+          <label for="input-file">Input file:</label>
+          <input
+            type="file"
+            name="input_file"
+            id="input-file"
+            onchange="updateFileName()"
+          />
+          <div id="file-name" class="file-status">
+            Tidak ada file yang dipilih
+          </div>
+        </div>
+
+        <!-- Mode (Cipher selection) -->
+        <label for="mode">Metode:</label>
+        <select name="mode" id="mode">
+          <option value="#">PILIH METODE</option>
+          <option value="vigenere">Vigenère</option>
+          <option value="auto_vigenere">
+            Auto-Key Vigenère (jumlah kunci harus sesuai jumlah Plaintext)
+          </option>
+          <option value="playfair">Playfair</option>
+          <option value="hill">Hill</option>
+          <option value="super_encryption">
+            Super Encryption (Vigenère + Transposisi Kolom)
+          </option>
+        </select>
+
+        <!-- Key -->
+        <label for="key">Key:</label>
+        <input type="text" name="key" id="key" />
+
+        <!-- Plaintext or Hex output -->
+        <label>Options :</label>
+
+        <!-- Encrypt and Decrypt buttons (for text) -->
+        <div class="button-section" id="text-buttons">
+          <button
+            type="submit"
+            name="action"
+            value="encrypt"
+            onclick="saveInputType()"
+          >
+            Encrypt
+          </button>
+          <button
+            type="submit"
+            name="action"
+            value="decrypt"
+            onclick="saveInputType()"
+          >
+            Decrypt
+          </button>
+        </div>
+
+        <!-- Encrypt and Decrypt buttons (for file) -->
+        <div class="button-section" id="file-buttons" style="display: none">
+          <button
+            type="submit"
+            name="action"
+            value="encrypt_file"
+            onclick="saveInputType()"
+          >
+            Encrypt File
+          </button>
+          <button
+            type="submit"
+            name="action"
+            value="decrypt_file"
+            onclick="saveInputType()"
+          >
+            Decrypt File
+          </button>
+        </div>
+      </form>
+
+      <h3>Encrypted/Decrypted text:</h3>
+      <div class="result">{{ encrypted_text }}</div>
+      <form action="/download" method="post">
+        <input
+          type="hidden"
+          name="encrypted_text"
+          value="{{ encrypted_text }}"
+        />
+        <button type="submit">Download Ciphertext</button>
+      </form>
+    </div>
+
+    <script>
+      function toggleInputFields() {
+        const inputType = document.getElementById("input-type").value;
+        const textInput = document.getElementById("text-input");
+        const fileInput = document.getElementById("file-input");
+        const textButtons = document.getElementById("text-buttons");
+        const fileButtons = document.getElementById("file-buttons");
+        const fileName = document.getElementById("file-name");
+
+        if (inputType === "file") {
+          textInput.style.display = "none";
+          fileInput.style.display = "block";
+          textButtons.style.display = "none";
+          fileButtons.style.display = "block";
+        } else {
+          textInput.style.display = "block";
+          fileInput.style.display = "none";
+          textButtons.style.display = "block";
+          fileButtons.style.display = "none";
+        }
+        fileName.textContent = "Tidak ada file yang dipilih"; // Reset file name
+      }
+
+      function updateFileName() {
+        const fileInput = document.getElementById("input-file");
+        const fileName = document.getElementById("file-name");
+        if (fileInput.files.length > 0) {
+          fileName.textContent = fileInput.files[0].name; // Display selected file name
+        } else {
+          fileName.textContent = "Tidak ada file yang dipilih"; // Default message
+        }
+      }
+
+      function saveInputType() {
+        const inputType = document.getElementById("input-type").value;
+        localStorage.setItem("input_type", inputType); // Save input type to local storage
+      }
+
+      window.onload = function () {
+        const savedInputType = localStorage.getItem("input_type");
+        if (savedInputType) {
+          document.getElementById("input-type").value = savedInputType;
+          toggleInputFields(); // Ensure the input fields reflect the saved input type
+        }
+      };
+    </script>
+  </body>
+</html>
